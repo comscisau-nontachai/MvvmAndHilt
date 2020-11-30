@@ -9,53 +9,39 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.feyverly.mvvmandhilt.data.entities.Character
 import com.feyverly.mvvmandhilt.databinding.ItemRvCharacterBinding
 
-class CharacterAdapter(val listener: OnItemCharacterListener) :
-    RecyclerView.Adapter<CharacterViewHolder>() {
+class CharacterAdapter constructor(private val listener: OnCharacterListener) :
+    RecyclerView.Adapter<CharacterAdapter.CharacterViewHolder>() {
+
     private val items = ArrayList<Character>()
 
-    interface OnItemCharacterListener {
+    interface OnCharacterListener {
         fun onItemClicked(id: Int)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CharacterViewHolder {
-        val binding =
-            ItemRvCharacterBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return CharacterViewHolder(binding,listener)
+    inner class CharacterViewHolder(val binding: ItemRvCharacterBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+        fun bind(item: Character, listener: OnCharacterListener) {
+            binding.apply {
+                data = item
+                action = listener
+                executePendingBindings()
+            }
+        }
     }
 
-    override fun onBindViewHolder(holder: CharacterViewHolder, position: Int) {
-        holder.bind(items[position])
-    }
-
-    override fun getItemCount(): Int = items.size
-
-    open fun setItem(list: ArrayList<Character>) {
+    fun setItems(list: ArrayList<Character>) {
         this.items.clear()
         this.items.addAll(list)
         notifyDataSetChanged()
     }
-}
 
-class CharacterViewHolder(
-    val itemBinding: ItemRvCharacterBinding,
-    val listener: CharacterAdapter.OnItemCharacterListener
-) : RecyclerView.ViewHolder(itemBinding.root),
-    View.OnClickListener {
-    private lateinit var character: Character
-
-    init {
-        itemBinding.root.setOnClickListener(this)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CharacterViewHolder {
+        return CharacterViewHolder(ItemRvCharacterBinding.inflate(LayoutInflater.from(parent.context),parent,false))
     }
 
-    fun bind(item: Character) {
-        this.character = item
-        itemBinding.tvName.text = item.name
-        itemBinding.tvSpeciesAndStatus.text = """${item.species} - ${item.status}"""
-        Glide.with(itemBinding.root).load(item.image).transform(CircleCrop())
-            .into(itemBinding.imgImage)
+    override fun onBindViewHolder(holder: CharacterViewHolder, position: Int) {
+        holder.bind(items[position], listener)
     }
 
-    override fun onClick(v: View?) {
-        listener.onItemClicked(character.id)
-    }
+    override fun getItemCount(): Int = items.size ?: 0
 }

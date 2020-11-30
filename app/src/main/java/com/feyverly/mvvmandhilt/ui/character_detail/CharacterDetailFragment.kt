@@ -14,6 +14,7 @@ import androidx.lifecycle.Observer
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.feyverly.mvvmandhilt.R
+import com.feyverly.mvvmandhilt.data.base.BaseFragment
 import com.feyverly.mvvmandhilt.data.entities.Character
 import com.feyverly.mvvmandhilt.databinding.FragmentCharacterDetailBinding
 import com.feyverly.mvvmandhilt.utils.Resource
@@ -21,54 +22,31 @@ import dagger.hilt.android.AndroidEntryPoint
 
 
 @AndroidEntryPoint
-class CharacterDetailFragment : Fragment() {
+class CharacterDetailFragment : BaseFragment<FragmentCharacterDetailBinding>() {
 
-    private lateinit var binding : FragmentCharacterDetailBinding
     private val viewModel : CharacaterDetailViewModel by viewModels()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        binding = FragmentCharacterDetailBinding.inflate(inflater,container,false)
-        return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        arguments?.getInt("id")?.let { viewModel.start(it) }
-        setupObservers()
-    }
-    private fun setupObservers(){
+    override fun setupObservers(){
         viewModel.character.observe(viewLifecycleOwner, Observer {
             when (it.status) {
                 Resource.Status.SUCCESS -> {
-                    binding.progressBar.isGone
-                    bindCharacter(it.data!!)
+                    binding.isLoading = false
+                    binding.data = it.data
                 }
-                Resource.Status.LOADING -> binding.progressBar.isVisible
+                Resource.Status.LOADING -> binding.isLoading = true
                 Resource.Status.ERROR -> Toast.makeText(requireContext(), it.message, Toast.LENGTH_SHORT)
                     .show()
             }
         })
     }
-    private fun bindCharacter(character: Character){
-        binding.apply {
-            tvName.text = character.name
-            tvSpecies.text = character.species
-            tvStatus.text = character.status
-            tvGender.text = character.gender
-            imgImage.loadImage(character.image)
-        }
 
+
+    override fun getLayoutId(): Int = R.layout.fragment_character_detail
+
+    override fun initView() {
+        arguments?.getInt("id")?.let { viewModel.start(it) }
+        setupObservers()
     }
-    fun ImageView.loadImage(url:String){
-        Glide.with(requireContext()).load(url).transform(CircleCrop()).into(this)
+    override fun initListener() {
     }
 }
